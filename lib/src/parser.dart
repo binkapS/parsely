@@ -26,9 +26,6 @@ class Parser {
 
   final RegExp _mentionRegex = RegExp(r"(@[a-zA-Z0-9_]+)");
 
-  RegExp regex = RegExp(
-      r"((https?:www\.)|(https?:\/\/)|(www\.))?[\w/\-?=%.][-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9]{1,6}(\/[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)?");
-
   final List<ParselyData> _matches = <ParselyData>[];
 
   final List<InlineSpan> spans = <InlineSpan>[];
