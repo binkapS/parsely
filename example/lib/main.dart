@@ -31,6 +31,7 @@ class MyApp extends StatelessWidget {
         body: Center(
           child: Container(
             decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(25),
               gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,

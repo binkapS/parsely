@@ -8,7 +8,6 @@ class ParselyOptions {
     this.parseMentionTag = true,
   });
 
-  /// hide https://, http:// and www
   final bool humanize;
 
   final bool parseEmail;
