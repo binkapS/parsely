@@ -31,12 +31,12 @@ class MyApp extends StatelessWidget {
         body: Center(
           child: Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.deepPurple.withOpacity(.5),
-                  Colors.purpleAccent.withOpacity(.5),
+                  Colors.deepPurple,
+                  Colors.purpleAccent,
                 ],
               ),
               boxShadow: [
@@ -52,6 +52,22 @@ class MyApp extends StatelessWidget {
               text:
                   'Visit me https://binkap.com, or you could send me an email at rea.desert.tiger@gmail.com, Supposedly you prefer calls reach me at +2348068989116 or simply use #binkap on twitter',
               textAlign: TextAlign.center,
+              options: ParselyOptions(
+                parseMentionTag: false,
+                humanize: true,
+                parsePhone: true,
+                parseHashTag: true,
+                parseEmail: true,
+                parseLink: true,
+              ),
+              mask: ParselyMask(
+                matches: [
+                  '+2348068989116',
+                ],
+                masks: [
+                  'My Contact',
+                ],
+              ),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 20,
@@ -59,7 +75,7 @@ class MyApp extends StatelessWidget {
                 fontFamily: 'DancingScript', // Feel free to change the font
               ),
               parsedStyle: const TextStyle(
-                color: Colors.blue,
+                color: Color.fromARGB(255, 33, 243, 86),
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'DancingScript', // Feel free to change the font

@@ -1,7 +1,9 @@
 import 'package:binkap_parsely/src/data.dart';
 import 'package:binkap_parsely/src/element.dart';
+import 'package:binkap_parsely/src/mask.dart';
 import 'package:binkap_parsely/src/option.dart';
 import 'package:binkap_parsely/src/type.dart';
+import 'package:binkap_parsely/src/util.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 
@@ -18,7 +20,8 @@ class Parser {
   );
 
   final RegExp _linkRegex = RegExp(
-      r"(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)");
+      r"(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)",
+      caseSensitive: false);
 
   final RegExp _phoneRegex = RegExp(r'\+?\d[\d -]{8,12}\d');
 
@@ -29,6 +32,8 @@ class Parser {
   final List<ParselyData> _matches = <ParselyData>[];
 
   final List<InlineSpan> spans = <InlineSpan>[];
+
+  ParselyMask? mask;
 
   late ParselyOptions options;
 
@@ -43,13 +48,23 @@ class Parser {
   InlineSpan _normalText(String text) => TextSpan(text: text, style: style);
 
   InlineSpan _parsedText(ParselyElement parselyElement) => TextSpan(
-        text: parselyElement.parsed,
+        text: _checkMask(parselyElement),
         style: matchedStyle,
         recognizer: TapGestureRecognizer()
           ..onTap = () => onTap(
                 parselyElement,
               ),
       );
+
+  String _checkMask(ParselyElement parselyElement) {
+    if (mask != null && mask!.matches.contains(parselyElement.parsed)) {
+      return mask!.masks
+          .elementAt(mask!.matches.indexOf(parselyElement.parsed));
+    }
+    return options.humanize
+        ? ParselyUtil.instance.humanize(parselyElement)
+        : parselyElement.parsed;
+  }
 
   void _matchRequested() {
     if (options.parseEmail) {
@@ -59,7 +74,6 @@ class Parser {
                 element: ParselyElement(
                     type: ParselyType.email, parsed: e.group(0)!),
                 match: e,
-                regex: e.pattern,
               ))
           .toList());
     }
@@ -70,7 +84,6 @@ class Parser {
                 element:
                     ParselyElement(type: ParselyType.link, parsed: e.group(0)!),
                 match: e,
-                regex: e.pattern,
               ))
           .toList());
     }
@@ -81,7 +94,6 @@ class Parser {
                 element: ParselyElement(
                     type: ParselyType.phone, parsed: e.group(0)!),
                 match: e,
-                regex: e.pattern,
               ))
           .toList());
     }
@@ -92,7 +104,6 @@ class Parser {
                 element: ParselyElement(
                     type: ParselyType.hashTag, parsed: e.group(0)!),
                 match: e,
-                regex: e.pattern,
               ))
           .toList());
     }
@@ -103,7 +114,6 @@ class Parser {
                 element: ParselyElement(
                     type: ParselyType.mentionTag, parsed: e.group(0)!),
                 match: e,
-                regex: e.pattern,
               ))
           .toList());
     }
@@ -128,11 +138,13 @@ class Parser {
     TextStyle? textStyle,
     TextStyle? parsedStyle,
     required Function(ParselyElement element) click,
+    ParselyMask? mask,
   }) {
     options = parselyOptions;
     matchedStyle = parsedStyle;
     style = textStyle;
     onTap = click;
+    this.mask = mask;
     _parseInlineSpans();
     return spans;
   }

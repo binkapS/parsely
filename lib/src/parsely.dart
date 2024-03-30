@@ -1,4 +1,5 @@
 import 'package:binkap_parsely/src/element.dart';
+import 'package:binkap_parsely/src/mask.dart';
 import 'package:binkap_parsely/src/option.dart';
 import 'package:binkap_parsely/src/parser.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ class Parsely extends StatelessWidget {
     this.selectionColor,
     this.options,
     required this.onTap,
+    this.mask,
   });
 
   final String text;
@@ -60,6 +62,8 @@ class Parsely extends StatelessWidget {
 
   final Function(ParselyElement element) onTap;
 
+  final ParselyMask? mask;
+
   @override
   Widget build(BuildContext context) {
     return RichText(
@@ -72,6 +76,7 @@ class Parsely extends StatelessWidget {
                 color: Colors.blue,
               ),
           click: onTap,
+          mask: mask,
         ),
       ),
       maxLines: maxLines,
