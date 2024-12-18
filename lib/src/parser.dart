@@ -50,10 +50,7 @@ class Parser {
   InlineSpan _parsedText(ParselyElement parselyElement) => TextSpan(
         text: _checkMask(parselyElement),
         style: matchedStyle,
-        recognizer: TapGestureRecognizer()
-          ..onTap = () => onTap(
-                parselyElement,
-              ),
+        recognizer: TapGestureRecognizer()..onTap = () => onTap(parselyElement),
       );
 
   String _checkMask(ParselyElement parselyElement) {
@@ -67,6 +64,10 @@ class Parser {
   }
 
   void _matchRequested() {
+    // Reset matches before processing new text
+    _matches.clear();
+
+    // Parse different patterns based on the options
     if (options.parseEmail) {
       _matches.addAll(_emailRegex
           .allMatches(parse)
@@ -117,20 +118,37 @@ class Parser {
               ))
           .toList());
     }
+
+    // Sort matches by start index to process text in order
     _matches.sort((a, b) => a.match.start.compareTo(b.match.start));
   }
 
   void _parseInlineSpans() {
     _matchRequested();
+
+    // If no matches are found, just add the full text as normal
+    if (_matches.isEmpty) {
+      spans.add(_normalText(parse));
+      return;
+    }
+
+    // Iterate over the matches
     for (ParselyData element in _matches) {
+      // Add normal text before the match, if any
       if (currentIndex < element.match.start) {
         spans.add(
             _normalText(parse.substring(currentIndex, element.match.start)));
         currentIndex = element.match.end;
       }
+
+      // Add the parsed text (email, link, etc.)
       spans.add(_parsedText(element.element));
     }
-    spans.add(_normalText(parse.substring(currentIndex, parse.length)));
+
+    // After the last match, if any, add the remaining normal text
+    if (currentIndex < parse.length) {
+      spans.add(_normalText(parse.substring(currentIndex, parse.length)));
+    }
   }
 
   List<InlineSpan> buildInlineSpans({
@@ -145,6 +163,7 @@ class Parser {
     style = textStyle;
     onTap = click;
     this.mask = mask;
+
     _parseInlineSpans();
     return spans;
   }
