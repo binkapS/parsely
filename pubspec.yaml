@@ -14,8 +14,6 @@ screenshots:
   - description: "Display-only masking: emails and phones replaced, original values preserved"
     path: screenshots/parsely_masking.png
 topics:
-  - text
-  - parsing
   - rich_text
   - mentions
   - hashtags
