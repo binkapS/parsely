@@ -20,29 +20,16 @@ class ParselyOptions {
   /// Use [enabledEntities] or the individual `parse*` flags to restrict
   /// which entity types are recognized.
   const ParselyOptions({
-    this.humanize = true,
     this.parseEmail = true,
     this.parseHashtag = true,
     this.parseLink = true,
     this.parsePhone = true,
     this.parseMention = true,
-    this.stripLinkScheme,
-    this.stripMentionPrefix,
+    this.stripLinkScheme = false,
+    this.stripMentionPrefix = false,
     this.enabledEntities,
     this.validator,
-    @Deprecated("Use parseHashtag instead") this.parseHashTag = true,
-    @Deprecated("Use parseMention instead") this.parseMentionTag = true,
-  }) : assert(
-          parseHashtag == parseHashTag || parseHashTag == true,
-          'parseHashtag / parseHashTag mismatch',
-        );
-
-  /// Legacy combined humanize flag.
-  ///
-  /// Maps to [stripLinkScheme] and [stripMentionPrefix] when those are not
-  /// set explicitly. Kept for backward compatibility; prefer the granular
-  /// flags.
-  final bool humanize;
+  });
 
   /// Whether to parse email addresses.
   final bool parseEmail;
@@ -59,11 +46,15 @@ class ParselyOptions {
   /// Whether to parse @mentions.
   final bool parseMention;
 
-  /// Granular display transforms. When null, falls back to [humanize].
-  final bool? stripLinkScheme;
+  /// Whether to strip `https://` / `www.` from link display text.
+  ///
+  /// Defaults to `false`: the original link text is shown.
+  final bool stripLinkScheme;
 
-  /// Granular display transforms. When null, falls back to [humanize].
-  final bool? stripMentionPrefix;
+  /// Whether to strip the leading `@` from mention display text.
+  ///
+  /// Defaults to `false`: the original mention text is shown.
+  final bool stripMentionPrefix;
 
   /// Canonical set override. When non-null, wins over the `parse*` bools.
   final Set<ParselyType>? enabledEntities;
@@ -72,17 +63,11 @@ class ParselyOptions {
   /// Return false to drop the candidate.
   final bool Function(ParselyElement element)? validator;
 
-  /// Deprecated: use [parseHashtag].
-  final bool parseHashTag;
-
-  /// Deprecated: use [parseMention].
-  final bool parseMentionTag;
-
   /// Effective strip-link-scheme flag.
-  bool get effectiveStripLinkScheme => stripLinkScheme ?? humanize;
+  bool get effectiveStripLinkScheme => stripLinkScheme;
 
   /// Effective strip-mention-prefix flag.
-  bool get effectiveStripMentionPrefix => stripMentionPrefix ?? humanize;
+  bool get effectiveStripMentionPrefix => stripMentionPrefix;
 
   /// Whether [type] is enabled, considering [enabledEntities] and `parse*`.
   bool isEnabled(ParselyType type) {
@@ -91,14 +76,13 @@ class ParselyOptions {
       ParselyType.email => parseEmail,
       ParselyType.link => parseLink,
       ParselyType.phone => parsePhone,
-      ParselyType.hashTag => parseHashtag && parseHashTag,
-      ParselyType.mentionTag => parseMention && parseMentionTag,
+      ParselyType.hashTag => parseHashtag,
+      ParselyType.mentionTag => parseMention,
     };
   }
 
   /// Create a copy with overrides.
   ParselyOptions copyWith({
-    bool? humanize,
     bool? parseEmail,
     bool? parseHashtag,
     bool? parseLink,
@@ -110,7 +94,6 @@ class ParselyOptions {
     bool Function(ParselyElement element)? validator,
   }) {
     return ParselyOptions(
-      humanize: humanize ?? this.humanize,
       parseEmail: parseEmail ?? this.parseEmail,
       parseHashtag: parseHashtag ?? this.parseHashtag,
       parseLink: parseLink ?? this.parseLink,
@@ -120,10 +103,6 @@ class ParselyOptions {
       stripMentionPrefix: stripMentionPrefix ?? this.stripMentionPrefix,
       enabledEntities: enabledEntities ?? this.enabledEntities,
       validator: validator ?? this.validator,
-      // ignore: deprecated_member_use_from_same_package
-      parseHashTag: parseHashTag,
-      // ignore: deprecated_member_use_from_same_package
-      parseMentionTag: parseMentionTag,
     );
   }
 
@@ -131,7 +110,6 @@ class ParselyOptions {
   bool operator ==(Object other) =>
       identical(this, other) ||
       other is ParselyOptions &&
-          humanize == other.humanize &&
           parseEmail == other.parseEmail &&
           parseHashtag == other.parseHashtag &&
           parseLink == other.parseLink &&
@@ -144,7 +122,6 @@ class ParselyOptions {
 
   @override
   int get hashCode => Object.hash(
-        humanize,
         parseEmail,
         parseHashtag,
         parseLink,
@@ -160,7 +137,8 @@ class ParselyOptions {
   String toString() =>
       'ParselyOptions(parseEmail: $parseEmail, parseLink: $parseLink, '
       'parsePhone: $parsePhone, parseHashtag: $parseHashtag, '
-      'parseMention: $parseMention, humanize: $humanize)';
+      'parseMention: $parseMention, stripLinkScheme: $stripLinkScheme, '
+      'stripMentionPrefix: $stripMentionPrefix)';
 }
 
 bool _setEquals(Set<ParselyType>? a, Set<ParselyType>? b) {

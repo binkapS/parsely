@@ -1,7 +1,6 @@
 import "package:binkap_parsely/src/data.dart";
 import "package:binkap_parsely/src/element.dart";
 import "package:binkap_parsely/src/engine.dart";
-import "package:binkap_parsely/src/mask.dart";
 import "package:binkap_parsely/src/masks.dart";
 import "package:binkap_parsely/src/option.dart";
 import "package:flutter/gestures.dart";
@@ -23,10 +22,6 @@ class Parser {
 
   /// The built inline spans (plain and tappable entity spans).
   final List<InlineSpan> spans = <InlineSpan>[];
-
-  /// Deprecated legacy mask; use [masks] or [maskBuilder] instead.
-  // ignore: deprecated_member_use_from_same_package
-  ParselyMask? mask;
 
   /// Map-based masking configuration for display text.
   ParselyMasks? masks;
@@ -64,8 +59,6 @@ class Parser {
     final entities = EntityEngine.extract(
       parse,
       options: options,
-      // ignore: deprecated_member_use_from_same_package
-      mask: mask,
       masks: masks,
       maskBuilder: maskBuilder,
     );
@@ -104,8 +97,6 @@ class Parser {
     TextStyle? textStyle,
     TextStyle? parsedStyle,
     required Function(ParselyElement element) click,
-    // ignore: deprecated_member_use_from_same_package
-    ParselyMask? mask,
     ParselyMasks? masks,
     ParselyMaskBuilder? maskBuilder,
   }) {
@@ -113,7 +104,6 @@ class Parser {
     matchedStyle = parsedStyle;
     style = textStyle;
     onTap = click;
-    this.mask = mask;
     this.masks = masks;
     this.maskBuilder = maskBuilder;
     _parseInlineSpans();
@@ -125,16 +115,12 @@ class Parser {
     String text, {
     ParselyOptions options = const ParselyOptions(),
     ParselyMasks? masks,
-    // ignore: deprecated_member_use_from_same_package
-    ParselyMask? mask,
     ParselyMaskBuilder? maskBuilder,
   }) =>
       ParselyParser.extract(
         text,
         options: options,
         masks: masks,
-        // ignore: deprecated_member_use_from_same_package
-        mask: mask,
         maskBuilder: maskBuilder,
       );
 }

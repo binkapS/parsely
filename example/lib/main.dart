@@ -11,7 +11,7 @@ const _rtlSample = 'مرحبا @dartlang، زر https://binkap.com وراسلن�
 
 const _unicodeSample = '#café ☕ #100DaysOfCode #日本語 #🎨 #emoji_الحب @café?';
 
-enum _MaskMode { none, exact, partialLast, legacy }
+enum _MaskMode { none, exact, partialLast }
 
 void main() {
   runApp(const ParselyExampleApp());
@@ -69,7 +69,6 @@ class _DemoPageState extends State<DemoPage> {
   bool _parseMention = true;
   bool _stripLinkScheme = true;
   bool _stripMentionPrefix = true;
-  bool _humanize = true;
 
   bool _showPlain = true;
   bool _showLive = true;
@@ -98,7 +97,6 @@ class _DemoPageState extends State<DemoPage> {
         parseMention: _parseMention,
         stripLinkScheme: _stripLinkScheme,
         stripMentionPrefix: _stripMentionPrefix,
-        humanize: _humanize,
       );
 
   ParselyMasks? get _masks {
@@ -112,7 +110,6 @@ class _DemoPageState extends State<DemoPage> {
       _MaskMode.none => null,
       // maskBuilder modes are wired via _maskBuilder; masks stay null.
       _MaskMode.partialLast => null,
-      _MaskMode.legacy => null,
     };
   }
 
@@ -121,16 +118,6 @@ class _DemoPageState extends State<DemoPage> {
     return ParselyMaskBuilders.partialLast(
       type: ParselyType.phone,
       keepLast: 4,
-    );
-  }
-
-  // ignore: deprecated_member_use
-  ParselyMask? get _legacyMask {
-    if (_maskMode != _MaskMode.legacy) return null;
-    // ignore: deprecated_member_use
-    return ParselyMask(
-      matches: const ['+2348068989116'],
-      masks: const ['My Contact'],
     );
   }
 
@@ -323,8 +310,6 @@ class _DemoPageState extends State<DemoPage> {
               options: _options,
               masks: _masks,
               maskBuilder: _maskBuilder,
-              // ignore: deprecated_member_use
-              mask: _legacyMask,
               onTap: _handleTap,
             ),
             const SizedBox(height: 8),
@@ -392,16 +377,11 @@ class _DemoPageState extends State<DemoPage> {
                 (v) => setState(() => _stripLinkScheme = v)),
             tile('stripMentionPrefix (strip @)', _stripMentionPrefix,
                 (v) => setState(() => _stripMentionPrefix = v)),
-            tile('humanize (legacy master flag)', _humanize,
-                (v) => setState(() => _humanize = v)),
             const Padding(
               padding: EdgeInsets.all(8),
               child: Text(
-                'Note: humanize is the legacy master switch. '
-                'When stripLinkScheme/stripMentionPrefix are set, they win; '
-                'otherwise they fall back to humanize. '
-                'Effective behavior: effectiveStripLinkScheme = '
-                'stripLinkScheme ?? humanize (same for mentions).',
+                'Note: strip flags are opt-in. When false, the original '
+                'link/mention text is shown as-is.',
                 style: TextStyle(fontSize: 12),
               ),
             ),
@@ -447,12 +427,6 @@ class _DemoPageState extends State<DemoPage> {
                       'ParselyMaskBuilders.partialLast(type: phone, keepLast: 4)',
                     ),
                   ),
-                  RadioListTile<_MaskMode>(
-                    value: _MaskMode.legacy,
-                    title: Text('Legacy ParselyMask (deprecated)'),
-                    subtitle:
-                        Text('Kept only to show the old API still works.'),
-                  ),
                 ],
               ),
             ),
@@ -467,8 +441,6 @@ class _DemoPageState extends State<DemoPage> {
               options: _options,
               masks: _masks,
               maskBuilder: _maskBuilder,
-              // ignore: deprecated_member_use
-              mask: _legacyMask,
               onTap: _handleTap,
             ),
           ],

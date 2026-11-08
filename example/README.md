@@ -9,13 +9,11 @@ screen, toggled live without restarting the app.
 - **Plain / default** `Parsely` widget and a **live** variant wired to every
   toggle below.
 - **`ParselyOptions` switches**: `parseEmail`, `parseLink`, `parsePhone`,
-  `parseHashtag`, `parseMention`, plus `stripLinkScheme`,
-  `stripMentionPrefix`, and the legacy `humanize` master flag (with a note
-  explaining `stripX ?? humanize` precedence).
+  `parseHashtag`, `parseMention`, plus `stripLinkScheme` and
+  `stripMentionPrefix`.
 - **Masking demo** (display-only — `parsed` is never mutated):
   none, `ParselyMasks` exact map, `maskBuilder` via
-  `ParselyMaskBuilders.partialLast(type: ParselyType.phone, keepLast: 4)`,
-  and the deprecated legacy `ParselyMask`.
+  `ParselyMaskBuilders.partialLast(type: ParselyType.phone, keepLast: 4)`.
 - **Headless** `ParselyParser.extract()` output list (type, parsed →
   display, offsets, `element.uri`) plus `ParselyParser.replace()`.
 - **`SelectableParsely`** section (copyable; masked spans copy display text).

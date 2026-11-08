@@ -1,6 +1,5 @@
 import "package:binkap_parsely/src/element.dart";
 import "package:binkap_parsely/src/humanize.dart";
-import "package:binkap_parsely/src/mask.dart";
 import "package:binkap_parsely/src/masks.dart";
 import "package:binkap_parsely/src/option.dart";
 import "package:binkap_parsely/src/regexes.dart";
@@ -40,8 +39,6 @@ class EntityEngine {
     String text, {
     ParselyOptions options = const ParselyOptions(),
     ParselyMasks? masks,
-    // ignore: deprecated_member_use_from_same_package
-    ParselyMask? mask,
     ParselyMaskBuilder? maskBuilder,
     List<EntityRule> customRules = const [],
   }) {
@@ -137,8 +134,6 @@ class EntityEngine {
       if (display == null && masks != null && masks.masksType(r.type)) {
         display = ParselyMasks.defaultMaskFor(r.type);
       }
-      // ignore: deprecated_member_use_from_same_package
-      if (display == null && mask != null) display = mask.resolve(r.parsed);
       display ??= ParselyHumanize.apply(base, options);
 
       result.add(base.copyWith(displayText: display));
@@ -232,8 +227,6 @@ class ParselyParser {
     String text, {
     ParselyOptions options = const ParselyOptions(),
     ParselyMasks? masks,
-    // ignore: deprecated_member_use_from_same_package
-    ParselyMask? mask,
     ParselyMaskBuilder? maskBuilder,
     List<EntityRule> customRules = const [],
   }) =>
@@ -241,8 +234,6 @@ class ParselyParser {
         text,
         options: options,
         masks: masks,
-        // ignore: deprecated_member_use_from_same_package
-        mask: mask,
         maskBuilder: maskBuilder,
         customRules: customRules,
       );
@@ -252,15 +243,12 @@ class ParselyParser {
     String text, {
     ParselyOptions options = const ParselyOptions(),
     ParselyMasks? masks,
-    // ignore: deprecated_member_use_from_same_package
-    ParselyMask? mask,
     ParselyMaskBuilder? maskBuilder,
     List<EntityRule> customRules = const [],
   }) {
     final entities = extract(text,
         options: options,
         masks: masks,
-        mask: mask,
         maskBuilder: maskBuilder,
         customRules: customRules);
     if (entities.isEmpty) return text;

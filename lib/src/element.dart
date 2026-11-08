@@ -3,7 +3,7 @@ import 'package:binkap_parsely/src/type.dart';
 /// A single parsed entity found in source text.
 ///
 /// [parsed] is the original source text for the entity. [displayText] is
-/// what the UI shows after masking and humanizing; it never changes
+/// what the UI shows after masking and display stripping; it never changes
 /// [parsed]. [start] and [end] are 0-based code-unit offsets into the
 /// original string (`start` inclusive, `end` exclusive).
 class ParselyElement {
@@ -33,7 +33,7 @@ class ParselyElement {
   /// When `-1`, resolves to [start] + [parsed].length.
   final int end;
 
-  /// What should be displayed (after mask/humanize). Defaults to [parsed].
+  /// What should be displayed (after masking and display stripping). Defaults to [parsed].
   final String displayText;
 
   /// Resolved end offset.

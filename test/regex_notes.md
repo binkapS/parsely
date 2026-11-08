@@ -14,7 +14,7 @@ Fuzz/benchmark entrypoint: feed 100 KB of mixed sample text through `extract()` 
 
 ## Implementation notes (as tested)
 
-- **Engine guarantees:** non-overlapping, sorted by `(start asc, length desc, priority asc)`, priority `email > link > phone > hashtag > mention`. Trailing punctuation trimmed for link/email. Offsets correct. `displayText` derived after mask > humanize.
+- **Engine guarantees:** non-overlapping, sorted by `(start asc, length desc, priority asc)`, priority `email > link > phone > hashtag > mention`. Trailing punctuation trimmed for link/email. Offsets correct. `displayText` derived after mask > strip.
 - **Email `a b@c.com`:** the whole candidate is invalid (no single entity spans the space). The embedded `b@c.com` after the boundary is a legitimate standalone email and *is* extracted; the test asserts no entity contains a space and no entity equals `'a b@c.com'`.
 - **Email `@b.com` / `a@@b.com`:** no *email* entity is produced. The surrounding text may still yield a mention/link under default options (e.g. `@b.com` yields mention `@b` with all types enabled); the email-specific negative in the corpus is therefore asserted with the email type filtered / `enabledEntities: {ParselyType.email}`.
 - **Link `foo@bar.com`:** under default options the engine returns a single email (email wins over the bare-domain link). Link-only extraction of the bare domain is expected but not asserted as a corpus negative.

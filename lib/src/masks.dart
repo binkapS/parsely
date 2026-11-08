@@ -16,8 +16,7 @@ typedef ParselyMaskBuilder = String? Function(ParselyElement element);
 /// Map-based masking configuration.
 ///
 /// Precedence when resolving a mask: [ParselyMaskBuilder] (if provided)
-/// → [fromBuilder] → exact → patterns → [maskAll] → legacy [ParselyMask]
-/// → humanized display.
+/// → [fromBuilder] → exact → patterns → [maskAll] → stripped display.
 class ParselyMasks {
   /// Creates a [ParselyMasks] config from [exact], [patterns] and [maskAll].
   const ParselyMasks({

@@ -1,6 +1,5 @@
 import "package:binkap_parsely/src/element.dart";
 import "package:binkap_parsely/src/engine.dart";
-import "package:binkap_parsely/src/mask.dart";
 import "package:binkap_parsely/src/masks.dart";
 import "package:binkap_parsely/src/option.dart";
 import "package:binkap_parsely/src/rule.dart";
@@ -38,8 +37,6 @@ class SelectableParsely extends StatefulWidget {
     this.onTap,
     this.onTapHandlers,
     this.onSelectionChanged,
-    // ignore: deprecated_member_use
-    this.mask,
     this.masks,
     this.maskBuilder,
     this.customRules = const [],
@@ -99,10 +96,6 @@ class SelectableParsely extends StatefulWidget {
   /// Called when the text selection changes, as for [SelectableText].
   final SelectionChangedCallback? onSelectionChanged;
 
-  /// Deprecated: use [masks] or [maskBuilder] instead.
-  // ignore: deprecated_member_use
-  final ParselyMask? mask;
-
   /// Map-based masking configuration for display text.
   final ParselyMasks? masks;
 
@@ -154,8 +147,6 @@ class _SelectableParselyState extends State<SelectableParsely> {
     final entities = EntityEngine.extract(
       widget.text,
       options: effectiveOptions,
-      // ignore: deprecated_member_use_from_same_package
-      mask: widget.mask,
       masks: widget.masks,
       maskBuilder: widget.maskBuilder,
       customRules: widget.customRules,

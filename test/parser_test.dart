@@ -350,9 +350,9 @@ void main() {
     });
   });
 
-  // HUMANIZE / MASK -------------------------------------------------
+  // DISPLAY STRIP / MASK -------------------------------------------------
 
-  group('Humanize / mask', () {
+  group('Display strip / mask', () {
     test('ParselyHumanize.stripLinkScheme https://x.com -> x.com', () {
       expect(ParselyHumanize.stripLinkScheme('https://x.com'), 'x.com');
     });
@@ -367,21 +367,23 @@ void main() {
       expect(ParselyHumanize.stripMentionPrefix('@user'), 'user');
     });
 
-    test('humanize true strips scheme by default', () {
-      final all = ParselyParser.extract('Visit https://x.com');
+    test('stripLinkScheme true strips scheme', () {
+      final all = ParselyParser.extract('Visit https://x.com',
+          options: const ParselyOptions(stripLinkScheme: true));
       expect(all.single.parsed, 'https://x.com');
       expect(all.single.displayText, 'x.com');
       expectOffsets('Visit https://x.com', all);
     });
 
-    test('humanize false keeps scheme', () {
+    test('default keeps scheme (stripLinkScheme false)', () {
       final all = ParselyParser.extract('Visit https://x.com',
-          options: const ParselyOptions(humanize: false));
+          options: const ParselyOptions(stripLinkScheme: false));
       expect(all.single.displayText, 'https://x.com');
     });
 
-    test('@ stripping when humanize true', () {
-      final all = ParselyParser.extract('Hi @user');
+    test('stripMentionPrefix true strips @', () {
+      final all = ParselyParser.extract('Hi @user',
+          options: const ParselyOptions(stripMentionPrefix: true));
       expect(all.single.type, ParselyType.mentionTag);
       expect(all.single.parsed, '@user');
       expect(all.single.displayText, 'user');
@@ -389,11 +391,19 @@ void main() {
 
     test('ParselyHumanize.apply respects options', () {
       const e = ParselyElement(type: ParselyType.link, parsed: 'https://x.com');
-      expect(ParselyHumanize.apply(e, const ParselyOptions(humanize: false)),
+      expect(
+          ParselyHumanize.apply(
+              e, const ParselyOptions(stripLinkScheme: false)),
           'https://x.com');
-      expect(ParselyHumanize.apply(e, const ParselyOptions()), 'x.com');
+      expect(
+          ParselyHumanize.apply(e, const ParselyOptions(stripLinkScheme: true)),
+          'x.com');
+      expect(ParselyHumanize.apply(e, const ParselyOptions()), 'https://x.com');
       const m = ParselyElement(type: ParselyType.mentionTag, parsed: '@hi');
-      expect(ParselyHumanize.apply(m, const ParselyOptions()), 'hi');
+      expect(
+          ParselyHumanize.apply(
+              m, const ParselyOptions(stripMentionPrefix: true)),
+          'hi');
       expect(
           ParselyHumanize.apply(
               m, const ParselyOptions(stripMentionPrefix: false)),
@@ -456,46 +466,29 @@ void main() {
       expect(builder(email), isNull);
     });
 
-    test('legacy ParselyMask', () {
-      // ignore: deprecated_member_use_from_same_package
+    test('ParselyMasks exact via extract', () {
       final all = ParselyParser.extract('a@b.com hello',
-          // ignore: deprecated_member_use_from_same_package
-          mask: ParselyMask(matches: ['a@b.com'], masks: ['hidden']));
+          masks: const ParselyMasks(exact: {'a@b.com': 'hidden'}));
       expect(all.single.displayText, 'hidden');
       expect(all.single.parsed, 'a@b.com');
     });
 
-    test('mask wins over humanize', () {
-      // displayText is derived after mask > humanize: a masked link must
-      // show the mask, not the humanized form.
+    test('mask wins over strip', () {
+      // displayText is derived after mask > strip: a masked link must
+      // show the mask, not the stripped form.
       final all = ParselyParser.extract('Visit https://x.com',
+          options: const ParselyOptions(stripLinkScheme: true),
           masks: const ParselyMasks(exact: {'https://x.com': 'Hidden link'}));
       expect(all.single.displayText, 'Hidden link');
     });
 
-    test('no-mask fallback is humanized/parsed display', () {
+    test('no-mask fallback is stripped/parsed display', () {
       final all = ParselyParser.extract('a@b.com hello #flutter',
           // No masks at all.
-          options: const ParselyOptions(humanize: false));
+          options: const ParselyOptions(
+              stripLinkScheme: false, stripMentionPrefix: false));
       expect(all[0].displayText, all[0].parsed);
       expect(all[1].displayText, all[1].parsed);
-    });
-
-    test('ParselyMask legacy resolve + toMasks + mismatch', () {
-      // ignore: deprecated_member_use_from_same_package
-      final legacy =
-          // ignore: deprecated_member_use_from_same_package
-          ParselyMask(matches: ['a', 'b'], masks: ['A', 'B']);
-      expect(legacy.resolve('a'), 'A');
-      expect(legacy.resolve('nope'), isNull);
-      expect(legacy.toMasks().exact, {'a': 'A', 'b': 'B'});
-      // Mismatched parallel lists fail loudly (assert in debug,
-      // ArgumentError from toMasks() on release paths).
-      expect(
-        () => // ignore: deprecated_member_use_from_same_package
-            ParselyMask(matches: ['a'], masks: ['A', 'B']).toMasks(),
-        throwsA(anyOf(isA<ArgumentError>(), isA<AssertionError>())),
-      );
     });
   });
 
@@ -558,10 +551,13 @@ void main() {
           enabledEntities: {ParselyType.link, ParselyType.email});
       expect(o.isEnabled(ParselyType.link), isTrue);
       expect(o.isEnabled(ParselyType.phone), isFalse);
-      expect(const ParselyOptions().effectiveStripLinkScheme, isTrue);
+      expect(const ParselyOptions().effectiveStripLinkScheme, isFalse);
       expect(
-          const ParselyOptions(humanize: false, stripLinkScheme: true)
-              .effectiveStripLinkScheme,
+          const ParselyOptions(stripLinkScheme: true).effectiveStripLinkScheme,
+          isTrue);
+      expect(
+          const ParselyOptions(stripMentionPrefix: true)
+              .effectiveStripMentionPrefix,
           isTrue);
     });
   });
@@ -580,8 +576,14 @@ void main() {
   group('Headless API', () {
     test('replace() substitutes display text', () {
       expect(ParselyParser.replace('Mail a@b.com!'), 'Mail a@b.com!');
-      // Humanized link display via replace.
-      expect(ParselyParser.replace('Visit https://x.com'), 'Visit x.com');
+      // Stripped link display via replace.
+      expect(
+          ParselyParser.replace('Visit https://x.com',
+              options: const ParselyOptions(stripLinkScheme: true)),
+          'Visit x.com');
+      // Default keeps the scheme.
+      expect(
+          ParselyParser.replace('Visit https://x.com'), 'Visit https://x.com');
       // Mask via replace.
       expect(
           ParselyParser.replace('call +234 806 898 9116',
@@ -593,7 +595,10 @@ void main() {
     });
 
     test('replace() preserves surrounding text + trailing punctuation', () {
-      expect(ParselyParser.replace('Visit https://x.com.'), 'Visit x.com.');
+      expect(
+          ParselyParser.replace('Visit https://x.com.',
+              options: const ParselyOptions(stripLinkScheme: true)),
+          'Visit x.com.');
     });
 
     test('contains()', () {
@@ -759,18 +764,16 @@ void main() {
           isNull);
     });
 
-    test('legacy ParselyUtil.humanize', () {
-      // ignore: deprecated_member_use_from_same_package
-      final u = ParselyUtil.instance;
-      // ignore: deprecated_member_use_from_same_package
+    test('ParselyHumanize strip helpers', () {
       expect(
-          u.humanize(const ParselyElement(
-              type: ParselyType.link, parsed: 'https://x.com')),
+          ParselyHumanize.stripLinkScheme(const ParselyElement(
+                  type: ParselyType.link, parsed: 'https://x.com')
+              .parsed),
           'x.com');
-      // ignore: deprecated_member_use_from_same_package
       expect(
-          u.humanize(const ParselyElement(
-              type: ParselyType.mentionTag, parsed: '@bob')),
+          ParselyHumanize.stripMentionPrefix(
+              const ParselyElement(type: ParselyType.mentionTag, parsed: '@bob')
+                  .parsed),
           'bob');
     });
   });

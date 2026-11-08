@@ -3,8 +3,6 @@ import 'package:binkap_parsely/src/option.dart';
 import 'package:binkap_parsely/src/type.dart';
 
 /// Display transforms (pure functions, no Flutter imports).
-///
-/// [ParselyUtil.humanize] is kept as a deprecated shim.
 class ParselyHumanize {
   const ParselyHumanize._();
 

@@ -17,7 +17,7 @@
 - [API reference](#api-reference)
   - [Parsely](#parsely)
   - [ParselyOptions](#parselyoptions)
-  - [ParselyMasks / ParselyMask / ParselyMaskBuilder](#parselyMasks--parselyMask--parselyMaskBuilder)
+  - [ParselyMasks / ParselyMaskBuilder](#parselyMasks--parselyMaskBuilder)
   - [ParselyElement](#parselyElement)
   - [ParselyType](#parselyType)
   - [ParselyParser](#parselyParser)
@@ -37,7 +37,7 @@ Add `binkap_parsely` to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  binkap_parsely: ^0.1.0
+  binkap_parsely: ^1.0.0
 ```
 
 Or run:
@@ -171,7 +171,6 @@ The main widget. Renders `text` with tappable entity spans.
 | `onTapHandlers` | `Map<ParselyType, ValueChanged<ParselyElement>>?` | Per-type tap handlers (called before `onTap`). | `null` |
 | `masks` | `ParselyMasks?` | Map-based masking config (preferred). | `null` |
 | `maskBuilder` | `ParselyMaskBuilder?` | Function-based masking. Takes precedence over `masks`. | `null` |
-| `mask` | `ParselyMask?` | Legacy parallel-list mask (deprecated). | `null` |
 | `customRules` | `List<EntityRule>` | Custom entity rules. | `[]` |
 
 ### ParselyOptions
@@ -181,19 +180,16 @@ The main widget. Renders `text` with tappable entity spans.
 | `parseEmail` | `bool` | Parse email addresses. | `true` |
 | `parseLink` | `bool` | Parse links / bare domains. | `true` |
 | `parsePhone` | `bool` | Parse phone numbers. | `true` |
-| `parseHashtag` | `bool` | Parse hashtags. Use this (not the deprecated `parseHashTag`). | `true` |
-| `parseMention` | `bool` | Parse @mentions. Use this (not the deprecated `parseMentionTag`). | `true` |
-| `stripLinkScheme` | `bool?` | Strip `https://` / `www.` from link display text. `null` falls back to `humanize`. | `null` |
-| `stripMentionPrefix` | `bool?` | Strip leading `@` from mention display text. `null` falls back to `humanize`. | `null` |
-| `humanize` | `bool` | Legacy combined flag for both strips. Prefer the granular flags. | `true` |
+| `parseHashtag` | `bool` | Parse hashtags. | `true` |
+| `parseMention` | `bool` | Parse @mentions. | `true` |
+| `stripLinkScheme` | `bool` | Strip `https://` / `www.` from link display text. | `false` |
+| `stripMentionPrefix` | `bool` | Strip leading `@` from mention display text. | `false` |
 | `enabledEntities` | `Set<ParselyType>?` | Canonical set override; wins over the `parse*` bools. | `null` |
 | `validator` | `bool Function(ParselyElement)?` | Post-match filter; return `false` to drop a candidate. | `null` |
-| `parseHashTag` | `bool` | Deprecated: use `parseHashtag`. | `true` |
-| `parseMentionTag` | `bool` | Deprecated: use `parseMention`. | `true` |
 
-### ParselyMasks / ParselyMask / ParselyMaskBuilder
+### ParselyMasks / ParselyMaskBuilder
 
-Precedence when resolving a mask: `maskBuilder` → `ParselyMasks` → legacy `ParselyMask` → humanized display.
+Precedence when resolving a mask: `maskBuilder` → `ParselyMasks` → stripped display.
 
 #### ParselyMasks (map-based, preferred)
 
@@ -206,15 +202,6 @@ Precedence when resolving a mask: `maskBuilder` → `ParselyMasks` → legacy `P
 ```dart
 const ParselyMasks(exact: {'+2348068989116': 'My Contact'})
 ```
-
-#### ParselyMask (legacy, deprecated)
-
-| Parameter | Type | Description |
-|---|---|---|
-| `matches` | `List<String>` | Values to mask. |
-| `masks` | `List<String>` | Display replacements, parallel to `matches`. |
-
-Use `ParselyMasks(exact: ...)` instead. See the [migration guide](#migration-guide).
 
 #### ParselyMaskBuilder (function form)
 
@@ -239,8 +226,8 @@ A single parsed entity.
 | Property | Type | Description |
 |---|---|---|
 | `type` | `ParselyType` | Entity kind (`link`, `email`, `phone`, `hashTag`, `mentionTag`). |
-| `parsed` | `String` | Original matched text (never mutated by masking/humanizing). |
-| `displayText` | `String` | What the UI shows after masking/humanizing. Defaults to `parsed`. |
+| `parsed` | `String` | Original matched text (never mutated by masking or display stripping). |
+| `displayText` | `String` | What the UI shows after masking and display stripping. Defaults to `parsed`. |
 | `start` | `int` | 0-based start offset (inclusive) in the source string. |
 | `end` | `int` | 0-based end offset (exclusive). `-1` means `start + parsed.length`. |
 | `uri` | `Uri?` | Launchable URI for link/email/phone (`https://…`, `mailto:…`, `tel:…`); `null` for hashtags/mentions. |
@@ -291,7 +278,7 @@ Selectable (copyable) variant of `Parsely`. Same entity/recognizer logic via `Se
 | `options`, `enabledEntities` | — | Same as `Parsely`. |
 | `onTap`, `onTapHandlers` | — | Tap callbacks, same as `Parsely`. |
 | `onSelectionChanged` | `SelectionChangedCallback?` | Selection-changed callback. |
-| `masks`, `maskBuilder`, `mask` (deprecated) | — | Masking, same as `Parsely`. |
+| `masks`, `maskBuilder` | — | Masking, same as `Parsely`. |
 | `customRules` | `List<EntityRule>` | Custom rules (`[]`). |
 
 ### ParselyLaunch
@@ -370,7 +357,7 @@ final links = ParselyParser.extract(
 
 ## Privacy & masking
 
-- Masking is **display-only**. `ParselyElement.parsed` always holds the original value; only `displayText` is masked/humanized.
+- Masking is **display-only**. `ParselyElement.parsed` always holds the original value; only `displayText` is masked or stripped.
 - `onTap` receives the original: the element passed to your callback has the unmasked `parsed` even though the user sees the mask.
 - With `SelectableParsely`, copying a masked span copies the *display* text (privacy-preserving by default). If you expose `parsed` elsewhere (logs, analytics, clipboard), treat it as sensitive PII.
 - For export, use `ParselyParser.replace(text, masks: …)` so exported strings never contain the originals.
@@ -381,13 +368,13 @@ final links = ParselyParser.extract(
 Check `options`/`enabledEntities` — e.g. `parseLink: false` disables links. Also ensure the regex actually matches (bare `a@b` is not an email; `#123` is not a hashtag).
 
 **Why does `https://` still show?**
-By default `stripLinkScheme` follows `humanize: true`. Set `stripLinkScheme: false` to keep the scheme, or leave it `null` to follow `humanize`.
+By default `stripLinkScheme` is `false`. Set `stripLinkScheme: true` to strip the scheme.
 
 **Why is `@dartlang` shown without `@`?**
-`stripMentionPrefix` defaults to `humanize: true`. Set `stripMentionPrefix: false` to keep the prefix.
+`stripMentionPrefix: true` strips the leading `@`. Set it to `false` to keep the prefix.
 
 **Why did my mask not apply?**
-Mask precedence is `maskBuilder` → `masks` → legacy `mask` → humanized. A non-`null` `maskBuilder` that returns `null` falls through to `masks`. Exact matches key on the *original* `parsed` value, not the display text.
+Mask precedence is `maskBuilder` → `masks` → stripped display. A non-`null` `maskBuilder` that returns `null` falls through to `masks`. Exact matches key on the *original* `parsed` value, not the display text.
 
 **How do I open links externally?**
 Parsely has zero dependencies. Use `element.uri` / `ParselyLaunch.uriFor(element)` with `url_launcher` in your app (see [ParselyLaunch](#parselyLaunch)).
@@ -397,16 +384,23 @@ Yes — it is pure Flutter with no platform dependencies.
 
 ## Migration guide
 
-| Old API | New API |
+> **1.0.0:** the following deprecated APIs were removed (they were deprecated
+> since `0.1.0`). Migrate as shown below.
+
+| Removed in 1.0.0 | Replacement |
 |---|---|
 | `ParselyOptions(parseHashTag: …)` | `ParselyOptions(parseHashtag: …)` |
 | `ParselyOptions(parseMentionTag: …)` | `ParselyOptions(parseMention: …)` |
 | `ParselyMask(matches: […], masks: […])` | `ParselyMasks(exact: {match: mask, …})` or `maskBuilder: (e) => …` |
-| `Parser` (widget parsing) | `Parsely` widget or `ParselyParser.extract(…)` (headless) |
 | `ParselyUtil.instance.humanize(e)` | `ParselyHumanize.stripLinkScheme(…)` / `stripMentionPrefix(…)` / `apply(e, options)` |
-| `humanize: true/false` (link + mention) | `stripLinkScheme:` and/or `stripMentionPrefix:` (granular; `null` falls back to `humanize`) |
+| `ParselyOptions(humanize: true)` | `ParselyOptions(stripLinkScheme: true, stripMentionPrefix: true)` |
+| `ParselyOptions(humanize: false)` | `ParselyOptions(stripLinkScheme: false, stripMentionPrefix: false)` (new defaults) |
+| `Parsely(mask: …)` / `SelectableParsely(mask: …)` / `ParselyParser.extract(…, mask: …)` | `masks:`, `maskBuilder:` |
 
-Old names (`parseHashTag`, `parseMentionTag`, `ParselyMask`, `Parser`, `ParselyUtil`) still work but are deprecated and will be removed in a future major release. `ParselyMask.toMasks()` converts legacy config to the map-based form.
+Note: `stripLinkScheme` and `stripMentionPrefix` default to `false` in 1.0.0,
+so display no longer strips link schemes or mention prefixes unless you
+opt in. Previously, `humanize: false` was already the inverse of the
+default — migrate it to the two explicit flags above.
 
 ## Out of scope
 

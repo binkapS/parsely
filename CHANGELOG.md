@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-11-08
+
+### Breaking changes
+
+- `stripLinkScheme` and `stripMentionPrefix` default to `false` (display no
+  longer strips link schemes or mention prefixes unless you opt in).
+  Previously the combined `humanize: true` default stripped both.
+
+### Removed
+
+- Removed deprecated `ParselyOptions(humanize: …)`. Migrate:
+  `humanize: true` → `stripLinkScheme: true, stripMentionPrefix: true`;
+  `humanize: false` → `stripLinkScheme: false, stripMentionPrefix: false`.
+- Removed deprecated `parseHashTag` / `parseMentionTag` options. Use
+  `parseHashtag` / `parseMention`.
+- Removed deprecated `ParselyMask(matches:…, masks:…)` class and every
+  `mask:` parameter (`Parsely`, `SelectableParsely`, `ParselyParser`,
+  `EntityEngine`, `Parser`). Use `ParselyMasks(exact: {…})` or a
+  `ParselyMaskBuilder` function; `ParselyMask.toMasks()` no longer exists.
+- Removed deprecated `ParselyUtil` singleton. Use `ParselyHumanize` helpers
+  (`stripLinkScheme`, `stripMentionPrefix`, `apply`).
+- Removed `lib/src/mask.dart` and `lib/src/util.dart` exports from the
+  `binkap_parsely` and `parser` entrypoints.
+
+### Changed
+
+- `ParselyOptions.humanize` fallback removed: `stripLinkScheme` /
+  `stripMentionPrefix` are now plain `bool` flags (default `false`), not
+  nullable. `effectiveStripLinkScheme` / `effectiveStripMentionPrefix`
+  return them directly.
+- `ParselyOptions.copyWith` / equality / `hashCode` / `toString` no longer
+  reference `humanize` or the `*Tag` aliases.
+
 ## [0.1.0] - 2026-11-08
 
 ### Added

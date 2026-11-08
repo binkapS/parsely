@@ -24,8 +24,6 @@ void main() {
     TextStyle? parsedStyle,
     Map<ParselyType, TextStyle>? parsedStyles,
     ParselyMasks? masks,
-    // ignore: deprecated_member_use
-    ParselyMask? mask,
     ParselyMaskBuilder? maskBuilder,
     Set<ParselyType>? enabledEntities,
     Map<ParselyType, ValueChanged<ParselyElement>>? onTapHandlers,
@@ -41,7 +39,6 @@ void main() {
             parsedStyle: parsedStyle,
             parsedStyles: parsedStyles,
             masks: masks,
-            mask: mask,
             maskBuilder: maskBuilder,
             enabledEntities: enabledEntities,
             onTapHandlers: onTapHandlers,
@@ -79,7 +76,7 @@ void main() {
         },
       );
       final xs = spans(tester);
-      // email, space, link (humanized display).
+      // email, space, link (unstripped display by default).
       expect(xs[0].style, emailStyle);
       expect(xs[2].style, linkStyle);
       expect(xs[0].recognizer, isNotNull);
@@ -108,12 +105,13 @@ void main() {
       await pumpParsely(
         tester,
         text: 'https://x.com',
+        options: const ParselyOptions(stripLinkScheme: true),
         onTap: tapped.add,
       );
       await tester.tap(find.byType(RichText));
       expect(tapped.single.type, ParselyType.link);
       expect(tapped.single.parsed, 'https://x.com');
-      // Display is humanized, payload is original.
+      // Display is stripped, payload is original.
       expect(tapped.single.displayText, 'x.com');
     });
 
@@ -142,19 +140,23 @@ void main() {
       expect(tapped, isEmpty);
     });
 
-    testWidgets('humanized display', (tester) async {
-      await pumpParsely(tester, text: 'Visit https://x.com');
+    testWidgets('stripped display', (tester) async {
+      await pumpParsely(
+        tester,
+        text: 'Visit https://x.com',
+        options: const ParselyOptions(stripLinkScheme: true),
+      );
       final all = spans(tester).map((s) => s.text ?? '').toList();
-      // Link span shows humanized `x.com`.
+      // Link span shows stripped `x.com`.
       expect(all, contains('x.com'));
       expect(all, isNot(contains('https://x.com')));
     });
 
-    testWidgets('humanize false keeps display', (tester) async {
+    testWidgets('stripLinkScheme false keeps display', (tester) async {
       await pumpParsely(
         tester,
         text: 'Visit https://x.com',
-        options: const ParselyOptions(humanize: false),
+        options: const ParselyOptions(stripLinkScheme: false),
       );
       final all = spans(tester).map((s) => s.text ?? '').toList();
       expect(all, contains('https://x.com'));
@@ -197,7 +199,11 @@ void main() {
     });
 
     testWidgets('overlap regression: link wins over mention', (tester) async {
-      await pumpParsely(tester, text: 'https://x.com/@user');
+      await pumpParsely(
+        tester,
+        text: 'https://x.com/@user',
+        options: const ParselyOptions(stripLinkScheme: true),
+      );
       final xs = spans(tester);
       expect(rebuilt(xs), 'x.com/@user');
       final entitySpans = xs.where((s) => s.recognizer != null).toList();
@@ -282,7 +288,8 @@ void main() {
       await pumpParsely(
         tester,
         text: 'a@b.com #flutter',
-        options: const ParselyOptions(humanize: false),
+        options: const ParselyOptions(
+            stripLinkScheme: false, stripMentionPrefix: false),
       );
       final xs = spans(tester);
       final labels =
@@ -307,7 +314,7 @@ void main() {
       expect(rebuilt(spans(tester)), '#flutter #dart');
     });
 
-    testWidgets('maskBuilder + legacy mask via widget', (tester) async {
+    testWidgets('maskBuilder + exact masks via widget', (tester) async {
       await pumpParsely(
         tester,
         text: '+234 806 898 9116',
@@ -316,12 +323,10 @@ void main() {
       );
       expect(spans(tester).single.text, '*************9116');
 
-      // ignore: deprecated_member_use
       await pumpParsely(
         tester,
         text: 'a@b.com',
-        // ignore: deprecated_member_use
-        mask: ParselyMask(matches: ['a@b.com'], masks: ['hidden']),
+        masks: const ParselyMasks(exact: {'a@b.com': 'hidden'}),
       );
       expect(spans(tester).single.text, 'hidden');
     });
@@ -335,6 +340,7 @@ void main() {
           home: Scaffold(
             body: SelectableParsely(
               text: 'Hi @dartlang',
+              options: const ParselyOptions(stripMentionPrefix: true),
               onTap: tapped.add,
             ),
           ),
