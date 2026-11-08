@@ -4,6 +4,15 @@ version: 1.0.0
 homepage: https://github.com/binkapS/binkap_parsely
 repository: https://github.com/binkapS/binkap_parsely
 issue_tracker: https://github.com/binkapS/binkap_parsely/issues
+screenshots:
+  - description: "All entity types rendered as tappable spans (links, emails, phones, hashtags, mentions)"
+    path: screenshots/parsely_demo.png
+  - description: "Links, emails, phones, hashtags and mentions in one sentence"
+    path: screenshots/parsely_entities.png
+  - description: "Per-type styling via parsedStyles"
+    path: screenshots/parsely_styles.png
+  - description: "Display-only masking: emails and phones replaced, original values preserved"
+    path: screenshots/parsely_masking.png
 topics:
   - text
   - parsing

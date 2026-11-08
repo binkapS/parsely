@@ -2,8 +2,7 @@
 
 [![pub.dev](https://img.shields.io/pub/v/binkap_parsely)](https://pub.dev/packages/binkap_parsely)
 [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![CI](https://github.com/binkapS/binkap_parsely/actions/workflows/ci.yml/badge.svg)](https://github.com/binkapS/binkap_parsely/actions)
-[![build status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/binkapS/binkap_parsely/actions)
+[![CI](https://github.com/binkapS/binkap_parsely/actions/workflows/flutter_test.yml/badge.svg)](https://github.com/binkapS/binkap_parsely/actions)
 
 **Parsely** turns plain text into tappable rich text. It extracts links, emails, phone numbers, hashtags, and @mentions from a `String` and renders them as tappable spans with customizable styling, masking, and display transforms — with zero runtime dependencies.
 
@@ -139,7 +138,17 @@ class ParselyDemoApp extends StatelessWidget {
 
 ## Screenshots
 
-> Screenshots are not included yet and will be added before the 1.0 release. See the `example/` app for a live demo.
+Rendered from the live `example/` app on the web (real fonts, not test-font outlines):
+
+![Parsely demo: all three showcase cards — entities, per-type styles, masking](screenshots/parsely_demo.png)
+
+![All entity types: links, emails, phones, hashtags and mentions in one sentence](screenshots/parsely_entities.png)
+
+![Per-type styling via parsedStyles](screenshots/parsely_styles.png)
+
+![Display-only masking: email and phone replaced with placeholders](screenshots/parsely_masking.png)
+
+Pixel-regression goldens live in `test/goldens/` (`test/goldens_test.dart`) and cover light, dark, RTL and masking states.
 
 ## API reference
 

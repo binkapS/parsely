@@ -1,0 +1,5 @@
+# Keep the published pub.dev archive lean: exclude planning notes and
+# local build/coverage output. Source, docs, screenshots and tests stay.
+plan.md
+coverage/
+build/
