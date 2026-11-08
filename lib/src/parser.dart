@@ -1,170 +1,175 @@
-import 'package:binkap_parsely/src/data.dart';
-import 'package:binkap_parsely/src/element.dart';
-import 'package:binkap_parsely/src/mask.dart';
-import 'package:binkap_parsely/src/option.dart';
-import 'package:binkap_parsely/src/type.dart';
-import 'package:binkap_parsely/src/util.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
+import "package:binkap_parsely/src/data.dart";
+import "package:binkap_parsely/src/element.dart";
+import "package:binkap_parsely/src/engine.dart";
+import "package:binkap_parsely/src/mask.dart";
+import "package:binkap_parsely/src/masks.dart";
+import "package:binkap_parsely/src/option.dart";
+import "package:flutter/gestures.dart";
+import "package:flutter/material.dart";
 
+/// Legacy parser (kept for backward compatibility).
+///
+/// New code should use [ParselyParser.extract] for headless use and the
+/// [Parsely] widget for display. This class now delegates to [EntityEngine]
+/// and is idempotent (clears all state on every [buildInlineSpans] call).
 class Parser {
-  Parser({
-    required this.parse,
-  });
+  /// Creates a [Parser] for the source [parse] text.
+  Parser({required this.parse});
 
+  /// The source text to parse.
   final String parse;
-
-  final RegExp _emailRegex = RegExp(
-    r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
-    caseSensitive: false,
-  );
-
-  final RegExp _linkRegex = RegExp(
-      r"(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)",
-      caseSensitive: false);
-
-  final RegExp _phoneRegex = RegExp(r'\+?\d[\d -]{8,12}\d');
-
-  final RegExp _hashtagRegex = RegExp(r"(#[a-zA-Z0-9_]+)");
-
-  final RegExp _mentionRegex = RegExp(r"(@[a-zA-Z0-9_]+)");
 
   final List<ParselyData> _matches = <ParselyData>[];
 
+  /// The built inline spans (plain and tappable entity spans).
   final List<InlineSpan> spans = <InlineSpan>[];
 
+  /// Deprecated legacy mask; use [masks] or [maskBuilder] instead.
+  // ignore: deprecated_member_use_from_same_package
   ParselyMask? mask;
 
+  /// Map-based masking configuration for display text.
+  ParselyMasks? masks;
+
+  /// Function-based masking; returns a display override or null.
+  ParselyMaskBuilder? maskBuilder;
+
+  /// Parsing and display options used by this parser.
   late ParselyOptions options;
 
+  /// Callback invoked when a parsed entity is tapped.
   late Function(ParselyElement element) onTap;
 
+  /// Style for non-entity (plain) text spans.
   TextStyle? style;
 
+  /// Style for matched entity spans.
   TextStyle? matchedStyle;
 
+  /// Current cursor offset while building spans.
   int currentIndex = 0;
 
   InlineSpan _normalText(String text) => TextSpan(text: text, style: style);
 
   InlineSpan _parsedText(ParselyElement parselyElement) => TextSpan(
-        text: _checkMask(parselyElement),
+        text: parselyElement.displayText,
         style: matchedStyle,
         recognizer: TapGestureRecognizer()..onTap = () => onTap(parselyElement),
       );
 
-  String _checkMask(ParselyElement parselyElement) {
-    if (mask != null && mask!.matches.contains(parselyElement.parsed)) {
-      return mask!.masks
-          .elementAt(mask!.matches.indexOf(parselyElement.parsed));
-    }
-    return options.humanize
-        ? ParselyUtil.instance.humanize(parselyElement)
-        : parselyElement.parsed;
-  }
-
   void _matchRequested() {
-    // Reset matches before processing new text
     _matches.clear();
-
-    // Parse different patterns based on the options
-    if (options.parseEmail) {
-      _matches.addAll(_emailRegex
-          .allMatches(parse)
-          .map((e) => ParselyData(
-                element: ParselyElement(
-                    type: ParselyType.email, parsed: e.group(0)!),
-                match: e,
-              ))
-          .toList());
+    spans.clear();
+    currentIndex = 0;
+    final entities = EntityEngine.extract(
+      parse,
+      options: options,
+      // ignore: deprecated_member_use_from_same_package
+      mask: mask,
+      masks: masks,
+      maskBuilder: maskBuilder,
+    );
+    for (final e in entities) {
+      _matches.add(
+          ParselyData(element: e, match: _FakeMatch(parse, e.start, e.end)));
     }
-    if (options.parseLink) {
-      _matches.addAll(_linkRegex
-          .allMatches(parse)
-          .map((e) => ParselyData(
-                element:
-                    ParselyElement(type: ParselyType.link, parsed: e.group(0)!),
-                match: e,
-              ))
-          .toList());
-    }
-    if (options.parsePhone) {
-      _matches.addAll(_phoneRegex
-          .allMatches(parse)
-          .map((e) => ParselyData(
-                element: ParselyElement(
-                    type: ParselyType.phone, parsed: e.group(0)!),
-                match: e,
-              ))
-          .toList());
-    }
-    if (options.parseHashTag) {
-      _matches.addAll(_hashtagRegex
-          .allMatches(parse)
-          .map((e) => ParselyData(
-                element: ParselyElement(
-                    type: ParselyType.hashTag, parsed: e.group(0)!),
-                match: e,
-              ))
-          .toList());
-    }
-    if (options.parseMentionTag) {
-      _matches.addAll(_mentionRegex
-          .allMatches(parse)
-          .map((e) => ParselyData(
-                element: ParselyElement(
-                    type: ParselyType.mentionTag, parsed: e.group(0)!),
-                match: e,
-              ))
-          .toList());
-    }
-
-    // Sort matches by start index to process text in order
-    _matches.sort((a, b) => a.match.start.compareTo(b.match.start));
   }
 
   void _parseInlineSpans() {
     _matchRequested();
-
-    // If no matches are found, just add the full text as normal
     if (_matches.isEmpty) {
       spans.add(_normalText(parse));
       return;
     }
-
-    // Iterate over the matches
-    for (ParselyData element in _matches) {
-      // Add normal text before the match, if any
+    for (final element in _matches) {
+      if (currentIndex > element.match.start) continue;
       if (currentIndex < element.match.start) {
         spans.add(
             _normalText(parse.substring(currentIndex, element.match.start)));
-        currentIndex = element.match.end;
       }
-
-      // Add the parsed text (email, link, etc.)
       spans.add(_parsedText(element.element));
+      currentIndex = element.match.end;
     }
-
-    // After the last match, if any, add the remaining normal text
     if (currentIndex < parse.length) {
       spans.add(_normalText(parse.substring(currentIndex, parse.length)));
     }
   }
 
+  /// Builds and returns inline spans for [parse] using the given options.
+  ///
+  /// [parselyOptions] controls extraction, [textStyle] / [parsedStyle]
+  /// style plain and entity spans, and [click] receives tapped elements.
   List<InlineSpan> buildInlineSpans({
     required ParselyOptions parselyOptions,
     TextStyle? textStyle,
     TextStyle? parsedStyle,
     required Function(ParselyElement element) click,
+    // ignore: deprecated_member_use_from_same_package
     ParselyMask? mask,
+    ParselyMasks? masks,
+    ParselyMaskBuilder? maskBuilder,
   }) {
     options = parselyOptions;
     matchedStyle = parsedStyle;
     style = textStyle;
     onTap = click;
     this.mask = mask;
-
+    this.masks = masks;
+    this.maskBuilder = maskBuilder;
     _parseInlineSpans();
     return spans;
   }
+
+  /// Headless helper.
+  static List<ParselyElement> extract(
+    String text, {
+    ParselyOptions options = const ParselyOptions(),
+    ParselyMasks? masks,
+    // ignore: deprecated_member_use_from_same_package
+    ParselyMask? mask,
+    ParselyMaskBuilder? maskBuilder,
+  }) =>
+      ParselyParser.extract(
+        text,
+        options: options,
+        masks: masks,
+        // ignore: deprecated_member_use_from_same_package
+        mask: mask,
+        maskBuilder: maskBuilder,
+      );
+}
+
+/// Minimal [Match] implementation preserving start/end/input.
+class _FakeMatch implements Match {
+  _FakeMatch(this._input, this._start, this._end);
+
+  final String _input;
+  final int _start;
+  final int _end;
+
+  @override
+  int get start => _start;
+
+  @override
+  int get end => _end;
+
+  @override
+  String get input => _input;
+
+  @override
+  int get groupCount => 0;
+
+  @override
+  Pattern get pattern => RegExp(r"");
+
+  @override
+  String? group(int group) =>
+      group == 0 ? _input.substring(_start, _end) : null;
+
+  @override
+  String? operator [](int group) => this.group(group);
+
+  @override
+  List<String?> groups(List<int> groupIndices) =>
+      groupIndices.map(group).toList();
 }

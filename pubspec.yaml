@@ -1,11 +1,21 @@
 name: binkap_parsely
-description: " A Flutter package for parsing links, emails, @mentions, hashtags, and phone numbers from text.  Mask extracted elements with custom patterns and add tappable click behavior for seamless interactions"
-version: 0.0.1
-homepage: "https://binkap.com"
+description: "A Flutter package for parsing links, emails, @mentions, hashtags, and phone numbers from text. Mask extracted elements with custom patterns and add tappable click behavior for seamless interactions."
+version: 0.1.0
+homepage: https://github.com/binkapS/binkap_parsely
+repository: https://github.com/binkapS/binkap_parsely
+issue_tracker: https://github.com/binkapS/binkap_parsely/issues
+topics:
+  - text
+  - parsing
+  - rich_text
+  - mentions
+  - hashtags
+  - links
+  - masking
 
 environment:
   sdk: '>=3.3.1 <4.0.0'
-  flutter: ">=1.17.0"
+  flutter: '>=3.22.0'
 
 dependencies:
   flutter:
@@ -14,6 +24,6 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^6.0.0
 
 flutter:
